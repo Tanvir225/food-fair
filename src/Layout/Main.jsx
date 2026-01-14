@@ -7,7 +7,7 @@ const Main = () => {
             <section>
                 <h2 className="text-3xl font-bold underline">This is Main Section</h2>
             </section>
-            <section className="bg-blue-50 h-screen">
+            <section className="bg-blue-50">
                 <Outlet></Outlet>
             </section>
         </div>

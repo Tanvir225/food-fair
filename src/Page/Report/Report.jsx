@@ -86,14 +86,16 @@ const Report = () => {
 
                 <input
                     type="date"
-                    className="input input-bordered"
+                    className="input input-bordered w-full"
                     value={from}
+                    placeholder="date from"
                     onChange={e => setFrom(e.target.value)}
                 />
 
                 <input
                     type="date"
-                    className="input input-bordered"
+                    placeholder="date to"
+                    className="input input-bordered w-full"
                     value={to}
                     onChange={e => setTo(e.target.value)}
                 />

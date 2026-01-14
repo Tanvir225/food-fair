@@ -1,23 +1,21 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import usePublicAxios from "../Hook/usePublicAxios";
 
-const places = [
-    "Dhanmondi",
-    "Gulshan",
-    "Badda",
-    "BUET",
-    "TSC",
-    "DOHS",
-    "Mohakhali",
-    "Baridhara"
-];
+
 
 const SaleModal = ({ food, onClose }) => {
     const [quantity, setQuantity] = useState(1);
     const [unitPrice, setUnitPrice] = useState(0);
     const [total, setTotal] = useState(0);
+    const [places, setPlaces] = useState([]);
     const [place, setPlace] = useState("");
 
+    const axios = usePublicAxios();
+
+    useEffect(() => {
+        axios.get("places").then(res => setPlaces(res.data));
+    }, [axios]);
 
     useEffect(() => {
         setTotal(quantity * unitPrice);
@@ -36,18 +34,17 @@ const SaleModal = ({ food, onClose }) => {
         };
 
         // post saleData to server or handle it as needed
-        fetch("http://localhost:5000/api/sales", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(saleData)
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Sale recorded:", data);
+
+        axios.post("sales", saleData)
+            .then(res => {
+                console.log(res);
                 toast.success("Sale recorded successfully!");
-            });
+            })
+            .catch(err => {
+                console.log(err);
+                toast.error("Failed to record sale. Please try again.");
+            }
+            );
 
         console.log("SALE DATA", saleData);
         onClose();
@@ -61,7 +58,7 @@ const SaleModal = ({ food, onClose }) => {
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <input
                         type="number"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full focus:outline-none"
                         placeholder="Quantity"
 
                         onChange={e => setQuantity(Number(e.target.value))}
@@ -69,27 +66,27 @@ const SaleModal = ({ food, onClose }) => {
 
                     <input
                         type="number"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full focus:outline-none"
                         placeholder="Unit Price"
                         onChange={e => setUnitPrice(Number(e.target.value))}
                     />
 
                     <input
                         type="text"
-                        className="input input-bordered w-full bg-gray-100"
+                        className="input input-bordered w-full bg-gray-100 focus:outline-none"
                         value={`Total Price: ৳ ${total}`}
                         readOnly
                     />
 
                     <select
-                        className="select select-bordered w-full"
+                        className="select select-bordered w-full focus:outline-none"
                         value={place}
                         onChange={e => setPlace(e.target.value)}
                         required
                     >
                         <option value="">Select Fair Place</option>
                         {places.map(p => (
-                            <option key={p}>{p}</option>
+                            <option key={p._id}>{p.name}</option>
                         ))}
                     </select>
 

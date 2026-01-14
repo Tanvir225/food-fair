@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
-
-const places = [
-    "",
-    "Dhanmondi",
-    "Gulshan",
-    "Badda",
-    "BUET",
-    "TSC",
-    "DOHS",
-    "Mohakhali",
-    "Baridhara",
-];
+import usePublicAxios from "../../Hook/usePublicAxios";
+import Loading from "../../Components/Share/Loading";
 
 const Report = () => {
+    const axios = usePublicAxios();
+
+    const [places, setPlaces] = useState([]);
     const [place, setPlace] = useState("");
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const [sales, setSales] = useState([]);
     const [costs, setCosts] = useState([]);
@@ -25,26 +19,49 @@ const Report = () => {
         profit: 0,
     });
 
+    /* ===============================
+       Fetch places (ONLY ONCE)
+    ================================ */
+    useEffect(() => {
+        axios.get("places").then(res => setPlaces(res.data));
+    }, [axios]);
+
+    /* ===============================
+       Fetch report data
+    ================================ */
     const fetchData = async () => {
-        const query = `place=${place}&from=${from}&to=${to}`;
+        setLoading(true);
 
-        const [salesRes, costRes, reportRes] = await Promise.all([
-            fetch(`http://localhost:5000/api/sales?${query}`),
-            fetch(`http://localhost:5000/api/costs?${query}`),
-            fetch(`http://localhost:5000/api/report?${query}`),
-        ]);
+        try {
+            const queryParams = new URLSearchParams();
+            if (place) queryParams.append("place", place);
+            if (from) queryParams.append("from", from);
+            if (to) queryParams.append("to", to);
 
-        setSales(await salesRes.json());
-        setCosts(await costRes.json());
-        setSummary(await reportRes.json());
+            const query = queryParams.toString();
+
+            const [salesRes, costRes, reportRes] = await Promise.all([
+                axios.get(`sales?${query}`),
+                axios.get(`costs?${query}`),
+                axios.get(`report?${query}`)
+            ]);
+
+            setSales(salesRes.data);
+            setCosts(costRes.data);
+            setSummary(reportRes.data);
+        } catch (err) {
+            console.error("Error fetching report data:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    /* ===============================
+       Initial load
+    ================================ */
     useEffect(() => {
         fetchData();
     }, []);
-
-   
-
 
     return (
         <div className="max-w-7xl mx-auto p-6">
@@ -60,27 +77,38 @@ const Report = () => {
                     onChange={e => setPlace(e.target.value)}
                 >
                     <option value="">All Places</option>
-                    {places.filter(Boolean).map(p => (
-                        <option key={p}>{p}</option>
+                    {places.map(p => (
+                        <option key={p._id} value={p.name}>
+                            {p.name}
+                        </option>
                     ))}
                 </select>
 
                 <input
                     type="date"
                     className="input input-bordered"
+                    value={from}
                     onChange={e => setFrom(e.target.value)}
                 />
 
                 <input
                     type="date"
                     className="input input-bordered"
+                    value={to}
                     onChange={e => setTo(e.target.value)}
                 />
 
-                <button onClick={fetchData} className="btn btn-primary">
-                    Apply Filter
+                <button
+                    onClick={fetchData}
+                    className="btn btn-primary"
+                    disabled={loading}
+                >
+                    {loading ? "Loading..." : "Apply Filter"}
                 </button>
             </div>
+
+            {/* Loading overlay */}
+            {loading && <Loading />}
 
             {/* Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -126,7 +154,7 @@ const Report = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sales.map(s => (
+                                {sales.slice(0, 50).map(s => (
                                     <tr key={s._id}>
                                         <td>{new Date(s.date).toLocaleDateString()}</td>
                                         <td>{s.foodName}</td>
@@ -153,7 +181,7 @@ const Report = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {costs.map(c => (
+                                {costs.slice(0, 50).map(c => (
                                     <tr key={c._id}>
                                         <td>{new Date(c.date).toLocaleDateString()}</td>
                                         <td>{c.type}</td>
